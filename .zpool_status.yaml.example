@@ -1,0 +1,4 @@
+email: "test@test.com"
+email_password: "password"
+email_server: "smtp.gmail.com"
+send_email: true
