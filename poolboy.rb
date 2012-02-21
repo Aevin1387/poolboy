@@ -90,7 +90,7 @@ class Poolboy
       puts pool_status pool
     end
 
-    send_email_for_pools(@options.pools)
+    send_email_for_pools
   end
 
   private
@@ -113,9 +113,9 @@ class Poolboy
     wait_time pool_status(pool_name)
   end
 
-  def send_email_for_pools(pools)
+  def send_email_for_pools
     status = ""
-    pools.each do |pool|
+    @options[:pools].each do |pool|
       status += pool_status(pool) + "\n"
     end
     @email.send_email(status)
