@@ -114,7 +114,8 @@ class Poolboy
   end
 
   def send_email_for_pools
-    status = ""
+    status = "From: #{@options[:email]}\n" +
+             "Subject: ZFS Pool status for pools: #{@options[:pools].join(", ")}\n\n"
     @options[:pools].each do |pool|
       status += pool_status(pool) + "\n"
     end
