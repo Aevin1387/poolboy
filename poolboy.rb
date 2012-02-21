@@ -1,4 +1,3 @@
-require 'pry'
 require 'trollop'
 require 'yaml'
 require 'openssl'
