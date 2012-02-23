@@ -2,11 +2,12 @@ require 'trollop'
 require 'yaml'
 require 'openssl'
 require 'net/smtp'
+require 'pry'
 
 class Options
   attr_reader :options
 
-  def initialize(*options)
+  def initialize()
     @options = config_options
     @options.merge! arg_options do |key, oldval, newval|
       oldval unless oldval.nil?
@@ -53,7 +54,7 @@ class Pool_Email
         @options[:email]
       end
     rescue Exception => error
-      $stderr.puts "An error occurred sending an email: " + error.to_s
+      print_error("An error occurred sending an email: " + error.to_s)
     end
   end
 
@@ -64,19 +65,26 @@ class Pool_Email
     $stderr.puts("email, email_password, and email_server must be set if you wish to send email") if should_send && !has_settings
     should_send && has_settings
   end
+
+  def print_error(error)
+    $stderr.puts error
+  end
 end
 
 class Poolboy
-  def initialize(option)
-    @options = option.options
+
+  def initialize
+    @options = Options.new.options
     @email = Pool_Email.new(@options)
   end
 
   def clean
     if(@options[:pools].nil? || @options[:pools].empty?)
-      $stderr.puts "Pools need to be defined by -pools or :pools in .zpool_status.yaml"
-      exit
+      print_error "Pools need to be defined by --pools or :pools in .zpool_status.yaml"
+      return
     end
+
+    remove_invalid_pools
 
     @options[:pools].each do |pool|
       start_scrub(pool)
@@ -93,12 +101,25 @@ class Poolboy
   end
 
   private
+  def pool_exists(pool_name)
+    status = `zpool status -v #{pool_name} 2>&1`
+    !status.include?("no such pool")
+  end
+
   def start_scrub(pool_name)
     `zpool scrub #{pool_name}`
   end
 
   def pool_status(pool_name)
     `zpool status -v #{pool_name}`
+  end
+
+  def remove_invalid_pools
+    @options[:pools].delete_if do |pool_name|
+      nonexistant = !pool_exists(pool_name)
+      print_error("#{pool_name} does not exist")
+      nonexistant
+    end
   end
 
   def wait_time(status)
@@ -120,7 +141,11 @@ class Poolboy
     end
     @email.send_email(status)
   end
+
+  def print_error(error)
+    $stderr.puts(error)
+  end
 end
 
-poolboy = Poolboy.new(Options.new)
+poolboy = Poolboy.new
 poolboy.clean
