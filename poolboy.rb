@@ -6,7 +6,7 @@ require 'net/smtp'
 class Options
   attr_reader :options
 
-  def initialize(*options)
+  def initialize()
     @options = config_options
     @options.merge! arg_options do |key, oldval, newval|
       oldval unless oldval.nil?
@@ -67,15 +67,16 @@ class Pool_Email
 end
 
 class Poolboy
-  def initialize(option)
-    @options = option.options
+
+  def initialize
+    @options = Options.new.options
     @email = Pool_Email.new(@options)
   end
 
   def clean
     if(@options[:pools].nil? || @options[:pools].empty?)
-      $stderr.puts "Pools need to be defined by -pools or :pools in .zpool_status.yaml"
-      exit
+      $stderr.puts "Pools need to be defined by --pools or :pools in .zpool_status.yaml"
+      return
     end
 
     @options[:pools].each do |pool|
@@ -122,5 +123,5 @@ class Poolboy
   end
 end
 
-poolboy = Poolboy.new(Options.new)
+poolboy = Poolboy.new
 poolboy.clean
